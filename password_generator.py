@@ -1,38 +1,33 @@
 import secrets
 import string
-import sys
+from flask import Flask, request
 
-args = sys.argv
+api = Flask(__name__)
 
-
+@api.route('/', methods=['POST'])
 def get_random_password_string():
+
+    data = request.get_json()
     # 入力値チェック
     # 引数を取得する
-    if len(sys.argv) == 6:
-        try:
-            password_length = int(args[1])
-        except Exception as error:
-            print("Input Error : 文字数は数字で入力してください")
-            return
+    try:
+        password_length = int(request.data.length)
+    except Exception as error:
+        return "Input Error : 文字数は数字で入力してください"
         
-        is_lowercase = args[2] == '1'
-        is_uppercase = args[3] == '1'
-        is_digits = args[4] == '1'
-        is_punctuation = args[5] == '1'
-    else:
-        print("Input Error : 条件は5つ入力してください")
-        return
-    
+    is_lowercase = request.data.is_lowercase == '1'
+    is_uppercase = request.data.is_uppercase == '1'
+    is_digits = request.data.is_digits == '1'
+    is_punctuation = request.data.is_punctuation == '1'
+        
     if password_length < 5:
-        print("Input Error : 文字数は5文字以上にしてください")
-        return
+        return "Input Error : 文字数は5文字以上にしてください"
     
     s1 = string.ascii_lowercase
     s2 = string.ascii_uppercase
     s3 = string.digits
     s4 = string.punctuation
     
-    print("args : {}".format(args))
     print("s1 : {}".format(s1))
     print("s2 : {}".format(s2))
     print("s3 : {}".format(s3))
@@ -53,17 +48,14 @@ def get_random_password_string():
         chars += s4
     
     if chars == '':
-        print("Input Error : 条件は1つ以上1を指定してください")
-        return
-    
-    # password = ''.join(secrets.choice(chars) for x in range(int(args[1])))
-    # print(password)
+        return "Input Error : 条件は1つ以上1を指定してください"
 
     # 任意の数を指定の文字数分取得する
     password = ''
     for x in range(password_length):
         password2 = secrets.choice(chars)
         password += password2
-    print(password)
+    return request.get_json().get_data()
 
-get_random_password_string()
+if __name__ == '__main__':
+    api.run(host='0.0.0.0', port=3000)
