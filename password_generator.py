@@ -7,18 +7,17 @@ api = Flask(__name__)
 @api.route('/', methods=['POST'])
 def get_random_password_string():
 
-    data = request.get_json()
     # 入力値チェック
     # 引数を取得する
     try:
-        password_length = int(request.data.length)
+        password_length = int(request.get_json()["length"])
     except Exception as error:
         return "Input Error : 文字数は数字で入力してください"
         
-    is_lowercase = request.data.is_lowercase == '1'
-    is_uppercase = request.data.is_uppercase == '1'
-    is_digits = request.data.is_digits == '1'
-    is_punctuation = request.data.is_punctuation == '1'
+    is_lowercase = request.get_json()["is_lowercase"] == '1'
+    is_uppercase = request.get_json()["is_uppercase"] == '1'
+    is_digits = request.get_json()["is_digits"] == '1'
+    is_punctuation = request.get_json()["is_punctuation"] == '1'
         
     if password_length < 5:
         return "Input Error : 文字数は5文字以上にしてください"
@@ -55,7 +54,7 @@ def get_random_password_string():
     for x in range(password_length):
         password2 = secrets.choice(chars)
         password += password2
-    return request.get_json().get_data()
+    return password
 
 if __name__ == '__main__':
     api.run(host='0.0.0.0', port=3000)
