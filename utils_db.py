@@ -64,13 +64,17 @@ def insert_test_item():
                 "status": "Error",
                 "message": "Connection is None"
             }
-            return res_err, 400
+            return res_err, 502
     
     except Exception as error:
         if con is not None:
             con.rollback()
             con.close()
-        return "Unexpected Error: {}".format(error)
+        res_err = {
+            "status": "Error",
+            "message": "Unexpected Error : {}".format(error)
+        }
+        return res_err, 500
 
 @api.route('/select', methods=['POST'])   
 def select_test_item():
@@ -129,7 +133,7 @@ def select_test_item():
                 "status": "Error",
                 "message": "Connection is None"
             }
-            return res_err, 400
+            return res_err, 502
 
     except Exception as error:
         if con is not None:
@@ -139,7 +143,7 @@ def select_test_item():
             "status": "Error",
             "message": "Unexpected Error : {}".format(error)
         }
-        return res_err, 400
+        return res_err, 500
 
 @api.route('/update', methods=['POST'])
 def update_test_item():
@@ -150,6 +154,24 @@ def update_test_item():
             res_err = {
                 "status": "Error",
                 "message": "Bad Request: id is None"
+            }
+            return res_err, 400
+        
+        try:
+            int(request.get_json()["id"])
+        except ValueError:
+            res_err = {
+                "status": "Error",
+                "message": "Bad Request: id must be a number"
+            }
+            return res_err, 400
+
+        try:
+            int(request.get_json()["num"])
+        except ValueError:
+            res_err = {
+                "status": "Error",
+                "message": "Bad Request: num must be a number"
             }
             return res_err, 400
         
@@ -198,13 +220,17 @@ def update_test_item():
                 "status": "Error",
                 "message": "Connection is None"
             }
-            return res_err, 400
+            return res_err, 502
 
     except Exception as error:
         if con is not None:
             con.rollback()
             con.close()
-        return "Unexpected Error: {}".format(error)
+        res_err = {
+            "status": "Error",
+            "message": "Unexpected Error : {}".format(error)
+        }
+        return res_err, 500
 
 @api.route('/delete', methods=['POST'])
 def delete_test_item():
@@ -215,6 +241,15 @@ def delete_test_item():
             res_err = {
                 "status": "Error",
                 "message": "Bad Request: id is None"
+            }
+            return res_err, 400
+
+        try:
+            int(request.get_json()["id"])
+        except ValueError:
+            res_err = {
+                "status": "Error",
+                "message": "Bad Request: id must be a number"
             }
             return res_err, 400
         
@@ -259,13 +294,17 @@ def delete_test_item():
                 "status": "Error",
                 "message": "Connection is None"
             }
-            return res_err, 400
+            return res_err, 502
         
     except Exception as error:
         if con is not None:
             con.rollback()
             con.close()
-        return "Unexpected Error: {}".format(error)
+        res_err = {
+            "status": "Error",
+            "message": "Unexpected Error : {}".format(error)
+        }
+        return res_err, 500
 
 if __name__ == '__main__':
     api.run(host='0.0.0.0', port=3000)
