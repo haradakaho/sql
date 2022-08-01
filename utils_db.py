@@ -23,6 +23,10 @@ def get_connection():
     
     return con
 
+@api.route('/_health', methods=['GET'])
+def health_check():
+    return "OK"
+
 @api.route('/insert', methods=['POST'])
 def insert_test_item():
     con = None
@@ -42,12 +46,25 @@ def insert_test_item():
             }
             return res_err, 400
         
+        try:
+            int(request.get_json()["id"])
+        except ValueError:
+            res_err = {
+                "status": "Error",
+                "message": "Bad Request: id must be a number"
+            }
+            return res_err, 400
+        
         con = get_connection()
         if con is not None:
             cur = con.cursor()
-
-            insert_sql = "INSERT INTO test (num, data, createdAt, updatedAt) VALUES(%s, %s, %s, %s)"
-            cur.execute(insert_sql, (request.get_json()["num"], request.get_json()["data"], "NOW()", "NOW()"))
+            insert_sql = ""
+            if "id" in request.get_json():
+                insert_sql += "INSERT INTO test (id, num, data, createdAt, updatedAt) VALUES(%s, %s, %s, %s, %s)"
+                cur.execute(insert_sql, (request.get_json()["id"], request.get_json()["num"], request.get_json()["data"], "NOW()", "NOW()"))
+            else:
+                insert_sql += "INSERT INTO test (num, data, createdAt, updatedAt) VALUES(%s, %s, %s, %s)"
+                cur.execute(insert_sql, (request.get_json()["num"], request.get_json()["data"], "NOW()", "NOW()"))
             con.commit()
 
             # Close communication with the database
@@ -76,12 +93,12 @@ def insert_test_item():
         }
         return res_err, 500
 
-@api.route('/select', methods=['POST'])   
+@api.route('/select', methods=['GET'])   
 def select_test_item():
     con = None
     try:
         # Request Validation => id
-        if "id" not in request.get_json():
+        if "id" not in request.args:
             res_err = {
                 "status": "Error",
                 "message": "Bad Request: id is None"
@@ -89,7 +106,7 @@ def select_test_item():
             return res_err, 400
         
         try:
-            int(request.get_json()["id"])
+            int(request.args['id'])
         except ValueError:
             res_err = {
                 "status": "Error",
@@ -100,7 +117,7 @@ def select_test_item():
         con = get_connection() 
         if con is not None:
             cur = con.cursor()
-            cur.execute("SELECT id, num, data, updatedAt, createdAt FROM test WHERE id = %s",(request.get_json()["id"],))
+            cur.execute("SELECT id, num, data, updatedAt, createdAt FROM test WHERE id = %s",(request.args['id'],))
             row = cur.fetchone()
             if row:
                 res = dict()
@@ -124,7 +141,7 @@ def select_test_item():
                 con.close()
                 res_err = {
                     "status": "error",
-                    "message": "test {} is None".format(request.get_json()["id"])
+                    "message": "test {} is None".format((request.args['id']))
                 }
                 return res_err, 400
             
@@ -165,15 +182,17 @@ def update_test_item():
                 "message": "Bad Request: id must be a number"
             }
             return res_err, 400
-
-        try:
-            int(request.get_json()["num"])
-        except ValueError:
-            res_err = {
-                "status": "Error",
-                "message": "Bad Request: num must be a number"
-            }
-            return res_err, 400
+        
+        if "update_content" in request.get_json():
+            if "num" in request.get_json()["update_content"]:
+                try:
+                    int(request.get_json()["update_content"]["num"])
+                except ValueError:
+                    res_err = {
+                        "status": "Error",
+                        "message": "Bad Request: num must be a number"
+                    }
+                    return res_err, 400
         
         con = get_connection()
         if con is not None:
@@ -191,7 +210,7 @@ def update_test_item():
                     update_sql += "{} = %s, ".format(key)
                     bind_object.append(value)
                 else:
-                    return "WARNING key:" + key + " does not exist"
+                    print("WARNING key:" + key + " does not exist")
             
             update_sql += "updatedAt = NOW()"
 
@@ -307,4 +326,4 @@ def delete_test_item():
         return res_err, 500
 
 if __name__ == '__main__':
-    api.run(host='0.0.0.0', port=3000)
+    api.run(host='0.0.0.0', port=3001)
